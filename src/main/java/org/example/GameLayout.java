@@ -16,9 +16,11 @@ public class GameLayout extends JPanel implements Runnable {
     Thread game;
     final int FPS = 60;
     Board board = new Board();
+    Mouse mouse = new Mouse();
 
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
+    Piece activep;
 
     public static final int WHITE =0;
     public static final int BLACK =1;
@@ -30,6 +32,9 @@ public class GameLayout extends JPanel implements Runnable {
 
         setPieces();
         copyPieces(pieces, simPieces);
+        addMouseListener(mouse);
+        addMouseMotionListener(mouse);
+
     }
     public void launchGame(){
         game = new Thread(this);
@@ -81,7 +86,33 @@ public class GameLayout extends JPanel implements Runnable {
 
 
     private void update(){
+        if(mouse.pressed){
+            if(activep == null){
+                for(Piece piece : simPieces){
+                    if(piece.color == currentColor &&
+                            piece.col == mouse.x/Board.SQUARE_SIZE &&
+                            piece.row == mouse.y/Board.SQUARE_SIZE) {
+                        activep = piece;
+                    }
+                }
+            }
+            else{
+                simulate();
+            }
+        }
+        if(mouse.pressed == false){
+            if(activep != null){
+                activep.updatePosition();
+                activep = null;
+            }
+        }
 
+    }
+    private void simulate(){
+        activep.x = mouse.x - Board.HALF_SQUARE_SIZE;
+        activep.y = mouse.y - Board.HALF_SQUARE_SIZE;
+        activep.col = activep.getCol(activep.x);
+        activep.row = activep.getRow(activep.y);
     }
     public void paintComponent(Graphics c){
         super.paintComponent(c);
@@ -90,7 +121,15 @@ public class GameLayout extends JPanel implements Runnable {
 
         for(Piece p : simPieces){
             p.draw(c2);
+        }
 
+        if(activep != null){
+            c2.setColor(Color.white);
+            c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.7f));
+            c2.fillRect(activep.col*Board.SQUARE_SIZE, activep.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE,Board.SQUARE_SIZE);
+            c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,1f));
+
+            activep.draw(c2);
         }
     }
 
