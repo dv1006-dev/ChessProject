@@ -12,4 +12,17 @@ public class Rook extends Piece{
             image = getImage("/piece/b-rook");
         }
     }
+
+    @Override
+    public boolean canMove(int targetCol, int targetRow) {
+        if(isWithinBoard(targetCol,targetRow) && isSameSquare(targetCol,targetRow) == false){
+            if(targetCol == preCol || targetRow == preRow){
+                if(isValidSquare(targetCol, targetRow) && isSameLine(targetCol,targetRow) == false){
+                    return true;
+                }
+
+            }
+        }
+        return false;
+    }
 }

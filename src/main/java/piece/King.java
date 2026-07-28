@@ -14,4 +14,17 @@ public class King extends Piece{
             }
 
     }
+
+    public boolean canMove(int targetCol, int targetRow){
+        if(isWithinBoard(targetCol,targetRow)){
+            if(Math.abs(targetRow - preRow) + Math.abs(targetCol - preCol ) == 1 ||
+                    Math.abs(targetRow - preRow) * Math.abs(targetCol - preCol ) == 1){
+
+                if(isValidSquare(targetCol,targetRow)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
