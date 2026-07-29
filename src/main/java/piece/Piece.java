@@ -14,6 +14,7 @@ public class Piece {
     public int col, row, preCol, preRow;
     public int color;
     public Piece hittingP;
+    public boolean moved;
 
     public Piece(int color, int col, int row ) {
         this.col = col;
@@ -59,6 +60,7 @@ public class Piece {
         y = getY(row);
         preCol = getCol(x);
         preRow = getRow(y);
+        moved = true;
     }
     public void resetPosition(){
         row = preRow;
@@ -138,6 +140,54 @@ public class Piece {
                 if(piece.col == targetCol && piece.row == r){
                     hittingP = piece;
                     return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isSameDiagnolLine(int targetCol, int targetRow){
+        if(targetRow < preRow){
+            for(int a = preCol-1; a > targetCol; a--){
+                int diff = Math.abs(a-preCol);
+                for(Piece piece: GameLayout.simPieces){
+                    if(piece.col == a && piece.row == preRow - diff){
+                        hittingP = piece;
+                        return true;
+                    }
+                }
+            }
+
+            for(int a = preCol+1; a < targetCol; a++){
+                int diff = Math.abs(a-preCol);
+                for(Piece piece: GameLayout.simPieces){
+                    if(piece.col == a && piece.row == preRow - diff){
+                        hittingP = piece;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if(targetRow > preRow){
+            for(int a = preCol-1; a > targetCol; a--){
+                int diff = Math.abs(a-preCol);
+                for(Piece piece: GameLayout.simPieces){
+                    if(piece.col == a && piece.row == preRow + diff){
+                        hittingP = piece;
+                        return true;
+                    }
+                }
+            }
+
+            for(int a = preCol+1; a < targetCol; a++){
+                int diff = Math.abs(a-preCol);
+                for(Piece piece: GameLayout.simPieces){
+                    if(piece.col == a && piece.row == preRow + diff){
+                        hittingP = piece;
+                        return true;
+                    }
                 }
             }
         }
