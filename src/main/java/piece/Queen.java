@@ -14,5 +14,21 @@ public class Queen extends Piece{
             }
 
     }
+
+    public boolean canMove(int targetCol, int targetRow){
+        if(isWithinBoard(targetCol,targetRow) && isSameSquare(targetCol,targetRow) == false){
+            if(Math.abs(targetCol -preCol) == Math.abs(targetRow - preRow) ){
+                if(isValidSquare(targetCol,targetRow) && isSameDiagnolLine(targetCol, targetRow) == false){
+                    return true;
+                }
+            }
+            if(targetCol == preCol || targetRow == preRow){
+                if(isValidSquare(targetCol, targetRow) && isSameLine(targetCol,targetRow) == false){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
 
