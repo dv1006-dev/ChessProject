@@ -61,7 +61,7 @@ public class GameLayout extends JPanel implements Runnable {
         pieces.add(new Rook(WHITE,7,7));
         pieces.add(new Bishop(WHITE,2,7));
         pieces.add(new Bishop(WHITE,5,7));
-        pieces.add(new King(WHITE,4,4));
+        pieces.add(new King(WHITE,4,7));
         pieces.add(new Queen(WHITE,3,7));
 
         pieces.add(new Pawn(BLACK,0,1));
@@ -110,6 +110,8 @@ public class GameLayout extends JPanel implements Runnable {
                 if(validSquare) {
                     copyPieces(simPieces, pieces);
                     activep.updatePosition();
+
+                    changePlayer();
                 }
                 else {
                     copyPieces(pieces, simPieces);
@@ -139,6 +141,16 @@ public class GameLayout extends JPanel implements Runnable {
             }
             validSquare = true;
         }
+    }
+
+    private void changePlayer(){
+        if(currentColor == WHITE){
+            currentColor = BLACK;
+        }
+        else{
+            currentColor = WHITE;
+        }
+        activep = null;
     }
     public void paintComponent(Graphics c){
         super.paintComponent(c);
