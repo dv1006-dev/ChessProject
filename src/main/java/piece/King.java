@@ -24,7 +24,35 @@ public class King extends Piece{
                     return true;
                 }
             }
+            if(moved == false){
+                if(targetCol == preCol+2 && targetRow == preRow && isSameLine(targetCol,targetRow) == false){
+                    for(Piece piece : GameLayout.simPieces){
+                        if(piece.col == preCol+3 && piece.row == preRow && piece.moved == false){
+                            GameLayout.castlingP = piece;
+                            return true;
+                        }
+                    }
+                }
+
+                if(targetCol == preCol-2 && targetRow == preRow && isSameLine(targetCol,targetRow) == false){
+                    Piece p[] = new Piece[2];
+                    for(Piece piece : GameLayout.simPieces){
+                        if(piece.col == preCol-3 && piece.row == targetRow){
+                            p[0] = piece;
+                        }
+                         if(piece.col == preCol-4 && piece.row == targetRow){
+                            p[1] = piece;
+                        }
+                        if(p[0] == null && p[1] != null && p[1].moved == false) {
+                            GameLayout.castlingP = p[1];
+                            return true;
+                        }
+                    }
+                }
+            }
         }
         return false;
     }
+
+
 }
