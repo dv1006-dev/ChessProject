@@ -1,10 +1,12 @@
 package piece;
 
 import org.example.GameLayout;
+import org.example.Type;
 
 public class Rook extends Piece{
     public Rook(int color, int col, int row) {
         super(color, col, row);
+        type = Type.ROOK;
 
         if (color == GameLayout.WHITE) {
             image = getImage("/piece/w-rook");

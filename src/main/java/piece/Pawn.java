@@ -1,10 +1,12 @@
 package piece;
 
 import org.example.GameLayout;
+import org.example.Type;
 
 public class Pawn extends Piece{
     public Pawn(int color, int col, int row) {
         super(color, col, row);
+        type = Type.PAWN;
 
         if (color == GameLayout.WHITE){
             image = getImage("/piece/w-pawn");
@@ -35,6 +37,16 @@ public class Pawn extends Piece{
             if(Math.abs(targetCol - preCol) == 1 && targetRow == preRow + moveNum && hittingP != null && hittingP.color != color){
                 return true;
             }
+
+            if(Math.abs(targetCol - preCol) == 1 && targetRow == preRow + moveNum){
+                for(Piece piece : GameLayout.simPieces){
+                    if(piece.col == targetCol && piece.row == preRow && piece.twoStepped == true){
+                        hittingP = piece;
+                        return true;
+                    }
+                }
+            }
+
         }
         return false;
     }

@@ -1,10 +1,12 @@
 package piece;
 
 import org.example.GameLayout;
+import org.example.Type;
 
 public class Bishop extends Piece{
     public Bishop(int color, int col, int row){
         super(color, col, row);
+        type = Type.BISHOP;
 
             if(color == GameLayout.WHITE){
                 image = getImage("/piece/w-bishop");

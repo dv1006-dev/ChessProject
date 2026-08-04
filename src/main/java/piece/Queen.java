@@ -1,10 +1,12 @@
 package piece;
 
 import org.example.GameLayout;
+import org.example.Type;
 
 public class Queen extends Piece{
     public Queen(int color, int col, int row){
         super(color, col, row);
+        type = Type.QUEEN;
 
             if(color == GameLayout.WHITE){
                     image = getImage("/piece/w-queen");
