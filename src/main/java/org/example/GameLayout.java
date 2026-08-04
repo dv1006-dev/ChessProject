@@ -20,6 +20,7 @@ public class GameLayout extends JPanel implements Runnable {
 
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
+    ArrayList<Piece> promoPieces = new ArrayList<>();
     Piece activep;
     public static Piece castlingP;
 
@@ -29,6 +30,7 @@ public class GameLayout extends JPanel implements Runnable {
 
     boolean canMove;
     boolean validSquare;
+    boolean promotion;
 
 
     public GameLayout() {
@@ -92,38 +94,51 @@ public class GameLayout extends JPanel implements Runnable {
 
 
     private void update(){
-        if(mouse.pressed){
-            if(activep == null){
-                for(Piece piece : simPieces){
-                    if(piece.color == currentColor &&
-                            piece.col == mouse.x/Board.SQUARE_SIZE &&
-                            piece.row == mouse.y/Board.SQUARE_SIZE) {
-                        activep = piece;
+        if(promotion){
+            promoting();
+        }
+        else{
+            if(mouse.pressed){
+                if(activep == null){
+                    for(Piece piece : simPieces){
+                        if(piece.color == currentColor &&
+                                piece.col == mouse.x/Board.SQUARE_SIZE &&
+                                piece.row == mouse.y/Board.SQUARE_SIZE) {
+                            activep = piece;
+                        }
                     }
                 }
+                else{
+                    simulate();
+                }
             }
-            else{
-                simulate();
-            }
-        }
-        if(mouse.pressed == false){
-            if(activep != null){
-                if(validSquare) {
-                    copyPieces(simPieces, pieces);
-                    activep.updatePosition();
-                    if(castlingP != null){
-                        castlingP.updatePosition();
-                    }
+            if(mouse.pressed == false){
+                if(activep != null){
+                    if(validSquare) {
+                        copyPieces(simPieces, pieces);
+                        activep.updatePosition();
+                        if(castlingP != null){
+                            castlingP.updatePosition();
+                        }
 
-                    changePlayer();
-                }
-                else {
-                    copyPieces(pieces, simPieces);
-                    activep.resetPosition();
-                    activep = null;
+                        if(canPromote()){
+                            promotion =true;
+                        }
+                        else {
+                            changePlayer();
+                        }
+                    }
+                    else {
+                        copyPieces(pieces, simPieces);
+                        activep.resetPosition();
+                        activep = null;
+                    }
                 }
             }
         }
+
+
+
 
     }
     private void simulate(){
@@ -185,6 +200,51 @@ public class GameLayout extends JPanel implements Runnable {
         }
         activep = null;
     }
+
+    private boolean canPromote(){
+        if(activep.type == Type.PAWN){
+            if(currentColor == WHITE && activep.row == 0 || currentColor == BLACK && activep.row == 7){
+                promoPieces.clear();
+                promoPieces.add(new Rook(currentColor, 9, 2));
+                promoPieces.add(new Bishop(currentColor,9,3));
+                promoPieces.add(new Knight(currentColor,9,4));
+                promoPieces.add(new Queen(currentColor,9,5));
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    private void promoting(){
+        if(mouse.pressed){
+            for(Piece piece : promoPieces){
+                if(piece.col == mouse.x/Board.SQUARE_SIZE && piece.row == mouse.y/Board.SQUARE_SIZE){
+                    switch(piece.type) {
+                        case ROOK:
+                            simPieces.add(new Rook(currentColor, activep.col, activep.row));
+                            break;
+                        case QUEEN:
+                            simPieces.add(new Queen(currentColor, activep.col, activep.row));
+                            break;
+                        case BISHOP:
+                            simPieces.add(new Bishop(currentColor, activep.col, activep.row));
+                            break;
+                        case KNIGHT:
+                            simPieces.add(new Knight(currentColor, activep.col, activep.row));
+                            break;
+
+                        default: break;
+                    }
+                    simPieces.remove(activep.getIndex());
+                    copyPieces(simPieces,pieces);
+                    activep = null;
+                    promotion = false;
+                    changePlayer();
+                }
+            }
+        }
+    }
     public void paintComponent(Graphics c){
         super.paintComponent(c);
         Graphics2D c2 = (Graphics2D)c;
@@ -203,6 +263,14 @@ public class GameLayout extends JPanel implements Runnable {
             }
 
             activep.draw(c2);
+        }
+
+        if(promotion){
+            c2.drawString("Promote to: ", 840, 150);
+            for(Piece piece: promoPieces){
+                c2.drawImage(piece.image, piece.getX(piece.col), piece.getY(piece.row),
+                        Board.SQUARE_SIZE,Board.SQUARE_SIZE, null);
+            }
         }
     }
 
