@@ -169,7 +169,7 @@ public class GameLayout extends JPanel implements Runnable {
                 simPieces.remove(activep.hittingP.getIndex());
             }
             checkCastling();
-            if(isIllegal(activep) == false){
+            if(isIllegal(activep) == false && opponentCanCaptureKing() == false){
             validSquare = true;
             }
         }
@@ -182,6 +182,16 @@ public class GameLayout extends JPanel implements Runnable {
                 }
             }
 
+        }
+        return false;
+    }
+    private boolean opponentCanCaptureKing(){
+        Piece king = getKing(false);
+
+        for(Piece piece : GameLayout.simPieces){
+            if(piece.color != king.color && piece.canMove(king.col,king.row)){
+                return true;
+            }
         }
         return false;
     }
@@ -302,7 +312,7 @@ public class GameLayout extends JPanel implements Runnable {
 
             if (activep != null) {
                 if (canMove) {
-                    if(isIllegal(activep)){
+                    if(isIllegal(activep) || opponentCanCaptureKing()){
                         c2.setColor(Color.GRAY);
                         c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
                         c2.fillRect(activep.col * Board.SQUARE_SIZE, activep.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
