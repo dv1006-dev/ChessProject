@@ -164,137 +164,155 @@ public class GameLayout extends JPanel implements Runnable {
                 simPieces.remove(activep.hittingP.getIndex());
             }
             checkCastling();
+            if(isIllegal(activep) == false){
             validSquare = true;
+            }
         }
     }
-    private void checkCastling(){
-        if(castlingP != null){
-            if(castlingP.col == 0){
-                castlingP.col +=3;
-            }
-            else if(castlingP.col == 7){
-                castlingP.col -=2;
-            }
-            castlingP.x = castlingP.getX(castlingP.col);
-        }
-    }
-
-    private void changePlayer(){
-        if(currentColor == WHITE){
-            currentColor = BLACK;
-
-            for(Piece piece: pieces){
-                if(piece.color == BLACK){
-                    piece.twoStepped = false;
+    private boolean isIllegal(Piece king) {
+        if (king.type == Type.KING) {
+            for (Piece piece : GameLayout.simPieces) {
+                if (piece.color != king.color && piece != king && piece.canMove(king.col, king.row)) {
+                    return true;
                 }
-            }
-        }
-        else{
-            currentColor = WHITE;
-
-            for(Piece piece: pieces){
-                if(piece.color == WHITE){
-                    piece.twoStepped = false;
-                }
-            }
-        }
-        activep = null;
-    }
-
-    private boolean canPromote(){
-        if(activep.type == Type.PAWN){
-            if(currentColor == WHITE && activep.row == 0 || currentColor == BLACK && activep.row == 7){
-                promoPieces.clear();
-                promoPieces.add(new Rook(currentColor, 9, 2));
-                promoPieces.add(new Bishop(currentColor,9,3));
-                promoPieces.add(new Knight(currentColor,9,4));
-                promoPieces.add(new Queen(currentColor,9,5));
-                return true;
             }
 
         }
         return false;
     }
+        private void checkCastling () {
+            if (castlingP != null) {
+                if (castlingP.col == 0) {
+                    castlingP.col += 3;
+                } else if (castlingP.col == 7) {
+                    castlingP.col -= 2;
+                }
+                castlingP.x = castlingP.getX(castlingP.col);
+            }
+        }
 
-    private void promoting(){
-        if(mouse.pressed){
-            for(Piece piece : promoPieces){
-                if(piece.col == mouse.x/Board.SQUARE_SIZE && piece.row == mouse.y/Board.SQUARE_SIZE){
-                    switch(piece.type) {
-                        case ROOK:
-                            simPieces.add(new Rook(currentColor, activep.col, activep.row));
-                            break;
-                        case QUEEN:
-                            simPieces.add(new Queen(currentColor, activep.col, activep.row));
-                            break;
-                        case BISHOP:
-                            simPieces.add(new Bishop(currentColor, activep.col, activep.row));
-                            break;
-                        case KNIGHT:
-                            simPieces.add(new Knight(currentColor, activep.col, activep.row));
-                            break;
+        private void changePlayer () {
+            if (currentColor == WHITE) {
+                currentColor = BLACK;
 
-                        default: break;
+                for (Piece piece : pieces) {
+                    if (piece.color == BLACK) {
+                        piece.twoStepped = false;
                     }
-                    simPieces.remove(activep.getIndex());
-                    copyPieces(simPieces,pieces);
-                    activep = null;
-                    promotion = false;
-                    changePlayer();
+                }
+            } else {
+                currentColor = WHITE;
+
+                for (Piece piece : pieces) {
+                    if (piece.color == WHITE) {
+                        piece.twoStepped = false;
+                    }
+                }
+            }
+            activep = null;
+        }
+
+        private boolean canPromote () {
+            if (activep.type == Type.PAWN) {
+                if (currentColor == WHITE && activep.row == 0 || currentColor == BLACK && activep.row == 7) {
+                    promoPieces.clear();
+                    promoPieces.add(new Rook(currentColor, 9, 2));
+                    promoPieces.add(new Bishop(currentColor, 9, 3));
+                    promoPieces.add(new Knight(currentColor, 9, 4));
+                    promoPieces.add(new Queen(currentColor, 9, 5));
+                    return true;
+                }
+
+            }
+            return false;
+        }
+
+        private void promoting () {
+            if (mouse.pressed) {
+                for (Piece piece : promoPieces) {
+                    if (piece.col == mouse.x / Board.SQUARE_SIZE && piece.row == mouse.y / Board.SQUARE_SIZE) {
+                        switch (piece.type) {
+                            case ROOK:
+                                simPieces.add(new Rook(currentColor, activep.col, activep.row));
+                                break;
+                            case QUEEN:
+                                simPieces.add(new Queen(currentColor, activep.col, activep.row));
+                                break;
+                            case BISHOP:
+                                simPieces.add(new Bishop(currentColor, activep.col, activep.row));
+                                break;
+                            case KNIGHT:
+                                simPieces.add(new Knight(currentColor, activep.col, activep.row));
+                                break;
+
+                            default:
+                                break;
+                        }
+                        simPieces.remove(activep.getIndex());
+                        copyPieces(simPieces, pieces);
+                        activep = null;
+                        promotion = false;
+                        changePlayer();
+                    }
+                }
+            }
+        }
+        public void paintComponent (Graphics c){
+            super.paintComponent(c);
+            Graphics2D c2 = (Graphics2D) c;
+            board.draw(c2);
+
+            for (Piece p : simPieces) {
+                p.draw(c2);
+            }
+
+            if (activep != null) {
+                if (canMove) {
+                    if(isIllegal(activep)){
+                        c2.setColor(Color.GRAY);
+                        c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                        c2.fillRect(activep.col * Board.SQUARE_SIZE, activep.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+                        c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                    } else {
+                        c2.setColor(Color.white);
+                        c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                        c2.fillRect(activep.col * Board.SQUARE_SIZE, activep.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+                        c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                    }
+                }
+
+                activep.draw(c2);
+            }
+
+            if (promotion) {
+                c2.drawString("Promote to: ", 840, 150);
+                for (Piece piece : promoPieces) {
+                    c2.drawImage(piece.image, piece.getX(piece.col), piece.getY(piece.row),
+                            Board.SQUARE_SIZE, Board.SQUARE_SIZE, null);
+                }
+            }
+        }
+
+
+        @Override
+        public void run () {
+            double drawIntval = 1000000000.0 / FPS;
+            double delta = 0;
+            long lastT = System.nanoTime();
+            long currentT;
+
+            while (game != null) {
+                currentT = System.nanoTime();
+
+                delta += (currentT - lastT) / drawIntval;
+                lastT = currentT;
+
+                if (delta >= 1) {
+                    update();
+                    repaint();
+                    delta--;
                 }
             }
         }
     }
-    public void paintComponent(Graphics c){
-        super.paintComponent(c);
-        Graphics2D c2 = (Graphics2D)c;
-        board.draw(c2);
-
-        for(Piece p : simPieces){
-            p.draw(c2);
-        }
-
-        if(activep != null){
-            if(canMove) {
-                c2.setColor(Color.white);
-                c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-                c2.fillRect(activep.col * Board.SQUARE_SIZE, activep.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
-                c2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-            }
-
-            activep.draw(c2);
-        }
-
-        if(promotion){
-            c2.drawString("Promote to: ", 840, 150);
-            for(Piece piece: promoPieces){
-                c2.drawImage(piece.image, piece.getX(piece.col), piece.getY(piece.row),
-                        Board.SQUARE_SIZE,Board.SQUARE_SIZE, null);
-            }
-        }
-    }
-
-
-
-    @Override
-    public void run() {
-        double drawIntval = 1000000000.0 /FPS;
-        double delta = 0;
-        long lastT = System.nanoTime();
-        long currentT;
-
-        while(game != null){
-            currentT = System.nanoTime();
-
-            delta += (currentT - lastT)/drawIntval;
-            lastT = currentT;
-
-            if(delta >= 1){
-                update();
-                repaint();
-                delta--;
-            }
-        }
-    }
-}
 
