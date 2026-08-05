@@ -21,7 +21,7 @@ public class GameLayout extends JPanel implements Runnable {
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
     ArrayList<Piece> promoPieces = new ArrayList<>();
-    Piece activep;
+    Piece activep, checkingP;
     public static Piece castlingP;
 
     public static final int WHITE =0;
@@ -31,6 +31,7 @@ public class GameLayout extends JPanel implements Runnable {
     boolean canMove;
     boolean validSquare;
     boolean promotion;
+    boolean gameOver;
 
 
     public GameLayout() {
@@ -120,13 +121,17 @@ public class GameLayout extends JPanel implements Runnable {
                         if(castlingP != null){
                             castlingP.updatePosition();
                         }
+                        if(isKingInCheck()){
 
-                        if(canPromote()){
-                            promotion =true;
-                        }
-                        else {
-                            changePlayer();
-                        }
+                        }else {}
+                            if(canPromote()){
+                                promotion =true;
+                            }
+                            else {
+                                changePlayer();
+                            }
+
+
                     }
                     else {
                         copyPieces(pieces, simPieces);
@@ -179,6 +184,35 @@ public class GameLayout extends JPanel implements Runnable {
 
         }
         return false;
+    }
+    private boolean isKingInCheck(){
+        Piece king = getKing(true);
+        if(activep.canMove(king.col, king.row) ){
+            checkingP = activep;
+            return true;
+        }else{
+            checkingP = null;
+        }
+
+
+
+        return false;
+    }
+    private Piece getKing(boolean opponent){
+        Piece king = null;
+
+        for(Piece piece: GameLayout.simPieces){
+            if(opponent){
+                if(piece.type == Type.KING && piece.color != currentColor){
+                    king = piece;
+                }
+            }else{
+                if(piece.type == Type.KING && piece.color == currentColor){
+                    king = piece;
+                }
+            }
+        }
+        return king;
     }
         private void checkCastling () {
             if (castlingP != null) {
@@ -284,11 +318,34 @@ public class GameLayout extends JPanel implements Runnable {
                 activep.draw(c2);
             }
 
+            c2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            c2.setFont(new Font("Book Antiqua", Font.PLAIN, 40));
+            c2.setColor(Color.white);
+
+
             if (promotion) {
                 c2.drawString("Promote to: ", 840, 150);
                 for (Piece piece : promoPieces) {
                     c2.drawImage(piece.image, piece.getX(piece.col), piece.getY(piece.row),
                             Board.SQUARE_SIZE, Board.SQUARE_SIZE, null);
+                }
+            }
+            else{
+                if(currentColor == WHITE){
+                    c2.drawString("White's Turn", 840, 550);
+                    if(checkingP != null && checkingP.color == BLACK){
+                        c2.setColor(Color.RED);
+                        c2.drawString("The King is", 840, 650);
+                        c2.drawString("in Check!", 840, 700);
+                    }
+                }
+                else{
+                    c2.drawString("Black's Turn", 840, 550);
+                    if(checkingP != null && checkingP.color == WHITE){
+                        c2.setColor(Color.RED);
+                        c2.drawString("The King is", 840, 650);
+                        c2.drawString("in Check!", 840, 700);
+                    }
                 }
             }
         }
