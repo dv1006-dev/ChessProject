@@ -36,7 +36,7 @@ public class GameLayout extends JPanel implements Runnable {
 
     public GameLayout() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        setBackground(Color.LIGHT_GRAY);
+        setBackground(Color.BLACK);
 
         setPieces();
         copyPieces(pieces, simPieces);
@@ -59,14 +59,14 @@ public class GameLayout extends JPanel implements Runnable {
         pieces.add(new Pawn(WHITE,5,6));
         pieces.add(new Pawn(WHITE,6,6));
         pieces.add(new Pawn(WHITE,7,6));
-        pieces.add(new Knight(WHITE,1,5));
-        pieces.add(new Knight(WHITE,6,5));
+        pieces.add(new Knight(WHITE,1,7));
+        pieces.add(new Knight(WHITE,6,7));
         pieces.add(new Rook(WHITE,0,7));
         pieces.add(new Rook(WHITE,7,7));
-        pieces.add(new Bishop(WHITE,2,5));
-        pieces.add(new Bishop(WHITE,5,5));
+        pieces.add(new Bishop(WHITE,2,7));
+        pieces.add(new Bishop(WHITE,5,7));
         pieces.add(new King(WHITE,4,7));
-        pieces.add(new Queen(WHITE,3,5));
+        pieces.add(new Queen(WHITE,3,7));
 
         pieces.add(new Pawn(BLACK,0,1));
         pieces.add(new Pawn(BLACK,1,1));
@@ -98,7 +98,7 @@ public class GameLayout extends JPanel implements Runnable {
         if(promotion){
             promoting();
         }
-        else{
+        else if(gameOver == false){
             if(mouse.pressed){
                 if(activep == null){
                     for(Piece piece : simPieces){
@@ -121,15 +121,16 @@ public class GameLayout extends JPanel implements Runnable {
                         if(castlingP != null){
                             castlingP.updatePosition();
                         }
-                        if(isKingInCheck()){
+                        if(isKingInCheck() && isCheckMate()){
+                            gameOver = true;
 
-                        }else {}
-                            if(canPromote()){
-                                promotion =true;
-                            }
-                            else {
+                        }else {
+                            if (canPromote()) {
+                                promotion = true;
+                            } else {
                                 changePlayer();
                             }
+                        }
 
 
                     }
@@ -223,6 +224,134 @@ public class GameLayout extends JPanel implements Runnable {
             }
         }
         return king;
+    }
+    private boolean isCheckMate(){
+        Piece king = getKing(true);
+
+        if(kingCanMove(king)){
+            return false;
+        }
+        else{
+            int colDiff = Math.abs(checkingP.col -king.col);
+            int rowDiff = Math.abs(checkingP.row - king.row);
+
+            if(colDiff == 0){
+                if(checkingP.row < king.row){
+                    for(int row = checkingP.row ; row < king.row; row++) {
+                        for (Piece piece : GameLayout.simPieces) {
+                            if (piece != king && piece.color != currentColor && piece.canMove(checkingP.col, row)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                if(checkingP.row > king.row){
+                    for(int row = checkingP.row ; row > king.row; row--) {
+                        for (Piece piece : GameLayout.simPieces) {
+                            if (piece != king && piece.color != currentColor && piece.canMove(checkingP.col, row)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            if(rowDiff == 0){
+                if(checkingP.col < king.col){
+                    for(int col = checkingP.col ; col < king.col; col++) {
+                        for (Piece piece : GameLayout.simPieces) {
+                            if (piece != king && piece.color != currentColor && piece.canMove(col, checkingP.row)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                if(checkingP.col > king.col){
+                    for(int col = checkingP.col ; col > king.col; col--) {
+                        for (Piece piece : GameLayout.simPieces) {
+                            if (piece != king && piece.color != currentColor && piece.canMove(col, checkingP.row)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+            }
+            else if(rowDiff == colDiff){
+                if(checkingP.row < king.row){
+                    if(checkingP.col < king.col){
+                        for(int col = checkingP.col, row = checkingP.row; col < king.col; col++, row++){
+                            for(Piece piece: GameLayout.simPieces){
+                                if(piece != king && piece.color != currentColor && piece.canMove(col, row)){
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    if(checkingP.col > king.col){
+                        for(int col = checkingP.col, row = checkingP.row; col > king.col; col--, row++){
+                            for(Piece piece: GameLayout.simPieces){
+                                if(piece != king && piece.color != currentColor && piece.canMove(col, row)){
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                if(checkingP.row > king.row){
+                    if(checkingP.col > king.col){
+                        for(int col = checkingP.col, row = checkingP.row; col > king.col; col--, row--){
+                            for(Piece piece: GameLayout.simPieces){
+                                if(piece != king && piece.color != currentColor && piece.canMove(col, row)){
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    if(checkingP.col < king.col){
+                        for(int col = checkingP.col, row = checkingP.row; col < king.col; col++, row--){
+                            for(Piece piece: GameLayout.simPieces){
+                                if(piece != king && piece.color != currentColor && piece.canMove(col, row)){
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+
+    }
+    private boolean kingCanMove(Piece king){
+        if(isValidSquare( king, -1,-1)){return true;}
+        if(isValidSquare( king, -1,0)){return true;}
+        if(isValidSquare( king, -1,1)){return true;}
+        if(isValidSquare( king, 0,-1)){return true;}
+        if(isValidSquare( king, 0,1)){return true;}
+        if(isValidSquare( king, 1,-1)){return true;}
+        if(isValidSquare( king, 1,0)){return true;}
+        if(isValidSquare( king, 1,1)){return true;}
+
+        return false;
+    }
+    private boolean isValidSquare(Piece king, int colPlus, int rowPlus){
+        boolean isValidSquare = false;
+
+        king.col += colPlus;
+        king.row += rowPlus;
+
+        if(king.canMove(king.col, king.row)){
+            if(king.hittingP != null){
+                simPieces.remove(king.hittingP.getIndex());
+            }
+            if(isIllegal(king) == false){
+                isValidSquare = true;
+            }
+        }
+        king.resetPosition();
+        copyPieces(pieces,simPieces);
+
+        return isValidSquare;
     }
         private void checkCastling () {
             if (castlingP != null) {
@@ -357,6 +486,20 @@ public class GameLayout extends JPanel implements Runnable {
                         c2.drawString("in Check!", 840, 700);
                     }
                 }
+            }
+
+            if(gameOver){
+                String s = "";
+                if(currentColor == WHITE){
+                    s= "White Won!";
+                    c2.setColor(Color.WHITE);
+                } else{
+                    s = "Black Won!";
+                    c2.setColor(Color.BLACK);
+                }
+                c2.setFont(new Font("Arial", Font.PLAIN, 90));
+                c2.drawString(s, 200, 420);
+
             }
         }
 
