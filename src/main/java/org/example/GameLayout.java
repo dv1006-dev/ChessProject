@@ -32,6 +32,7 @@ public class GameLayout extends JPanel implements Runnable {
     boolean validSquare;
     boolean promotion;
     boolean gameOver;
+    boolean stalemate;
 
 
     public GameLayout() {
@@ -98,7 +99,7 @@ public class GameLayout extends JPanel implements Runnable {
         if(promotion){
             promoting();
         }
-        else if(gameOver == false){
+        else if(gameOver == false && stalemate == false){
             if(mouse.pressed){
                 if(activep == null){
                     for(Piece piece : simPieces){
@@ -124,7 +125,10 @@ public class GameLayout extends JPanel implements Runnable {
                         if(isKingInCheck() && isCheckMate()){
                             gameOver = true;
 
-                        }else {
+                        } else if(isStalemate() && isKingInCheck() == false){
+                            stalemate = true;
+                        }
+                        else {
                             if (canPromote()) {
                                 promotion = true;
                             } else {
@@ -323,7 +327,7 @@ public class GameLayout extends JPanel implements Runnable {
 
     }
     private boolean kingCanMove(Piece king){
-        if(isValidSquare( king, -1,-1)){return true;}
+        if(isValidSquare( king, -1,-1)) {return true;}
         if(isValidSquare( king, -1,0)){return true;}
         if(isValidSquare( king, -1,1)){return true;}
         if(isValidSquare( king, 0,-1)){return true;}
@@ -352,6 +356,21 @@ public class GameLayout extends JPanel implements Runnable {
         copyPieces(pieces,simPieces);
 
         return isValidSquare;
+    }
+    private boolean isStalemate(){
+        int count = 0;
+        for(Piece piece: simPieces){
+            if(piece.color != currentColor){
+                count++;
+            }
+        }
+        if(count == 1) {
+            if (kingCanMove(getKing(true)) == false) {
+                return true;
+            }
+        }
+        return false;
+        
     }
         private void checkCastling () {
             if (castlingP != null) {
@@ -500,6 +519,10 @@ public class GameLayout extends JPanel implements Runnable {
                 c2.setFont(new Font("Arial", Font.PLAIN, 90));
                 c2.drawString(s, 200, 420);
 
+            }
+            if(stalemate){
+                c2.setFont(new Font("Arial", Font.PLAIN, 90));
+                c2.drawString("Stalemate!", 200, 420);
             }
         }
 
