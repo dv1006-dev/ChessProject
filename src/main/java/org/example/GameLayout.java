@@ -32,7 +32,7 @@ public class GameLayout extends JPanel implements Runnable {
     boolean validSquare;
     boolean promotion;
     boolean gameOver;
-    boolean stalemate;
+    boolean draw;
 
 
     public GameLayout() {
@@ -99,7 +99,7 @@ public class GameLayout extends JPanel implements Runnable {
         if(promotion){
             promoting();
         }
-        else if(gameOver == false && stalemate == false){
+        else if(gameOver == false && draw == false){
             if(mouse.pressed){
                 if(activep == null){
                     for(Piece piece : simPieces){
@@ -125,8 +125,8 @@ public class GameLayout extends JPanel implements Runnable {
                         if(isKingInCheck() && isCheckMate()){
                             gameOver = true;
 
-                        } else if(isStalemate() && isKingInCheck() == false){
-                            stalemate = true;
+                        } else if(isDraw() && isKingInCheck() == false){
+                            draw = true;
                         }
                         else {
                             if (canPromote()) {
@@ -357,6 +357,82 @@ public class GameLayout extends JPanel implements Runnable {
 
         return isValidSquare;
     }
+    private boolean isDraw(){
+        if(isStalemate()){
+            return true;
+        }
+        if(isInsufficientMaterial()){
+            return true;
+        }
+
+        return false;
+    }
+    private boolean isInsufficientMaterial(){
+            int bishops = 0;
+            int knights = 0;
+            int otherPieces = 0;
+
+            int bishopSquareColor = -1;
+
+            for (Piece piece : GameLayout.simPieces) {
+
+                if (piece == null) {
+                    continue;
+                }
+
+                // Kings do not count as material.
+                if (piece.type == Type.KING) {
+                    continue;
+                }
+
+                if (piece.type == Type.BISHOP) {
+
+                    bishops++;
+
+                    int squareColor = (piece.row + piece.col) % 2;
+
+                    if (bishopSquareColor == -1) {
+                        bishopSquareColor = squareColor;
+                    } else if (bishopSquareColor != squareColor) {
+                        // Bishops are on opposite-colored squares.
+                        return false;
+                    }
+
+                } else if (piece.type == Type.KNIGHT) {
+
+                    knights++;
+
+                } else {
+
+                    // Pawn, rook, or queen.
+                    otherPieces++;
+                }
+            }
+
+            // King vs King
+            if (bishops == 0 && knights == 0 && otherPieces == 0) {
+                return true;
+            }
+
+            // King + Bishop vs King
+            if (bishops == 1 && knights == 0 && otherPieces == 0) {
+                return true;
+            }
+
+            // King + Knight vs King
+            if (bishops == 0 && knights == 1 && otherPieces == 0) {
+                return true;
+            }
+
+            // King + Bishop vs King + Bishop
+            // when both bishops are on the same color.
+            if (bishops == 2 && knights == 0 && otherPieces == 0) {
+                return true;
+            }
+
+            return false;
+
+    }
     private boolean isStalemate(){
         int count = 0;
         for(Piece piece: simPieces){
@@ -520,9 +596,9 @@ public class GameLayout extends JPanel implements Runnable {
                 c2.drawString(s, 200, 420);
 
             }
-            if(stalemate){
+            if(draw){
                 c2.setFont(new Font("Arial", Font.PLAIN, 90));
-                c2.drawString("Stalemate!", 200, 420);
+                c2.drawString("Draw!", 200, 420);
             }
         }
 
