@@ -34,6 +34,12 @@ public class GameLayout extends JPanel implements Runnable {
     boolean gameOver;
     boolean draw;
 
+    // ADDED
+    private int halfmoveClock = 0;
+
+    // ADDED
+    private ArrayList<String> positionHistory = new ArrayList<>();
+
 
     public GameLayout() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -122,6 +128,14 @@ public class GameLayout extends JPanel implements Runnable {
                         if(castlingP != null){
                             castlingP.updatePosition();
                         }
+                        // ADDED
+                        // Pawn moves and captures reset the 50-move counter.
+                        if(activep.type == Type.PAWN || activep.hittingP != null) {
+                            halfmoveClock = 0;
+                        }
+                        else {
+                            halfmoveClock++;
+                        }
                         if(isKingInCheck() && isCheckMate()){
                             gameOver = true;
 
@@ -133,6 +147,13 @@ public class GameLayout extends JPanel implements Runnable {
                                 promotion = true;
                             } else {
                                 changePlayer();
+                                // ADDED
+                                positionHistory.add(getPositionKey());
+
+                                // ADDED
+                                if(isFiftyMoveRule() || isThreefoldRepetition()) {
+                                    draw = true;
+                                }
                             }
                         }
 
@@ -364,8 +385,64 @@ public class GameLayout extends JPanel implements Runnable {
         if(isInsufficientMaterial()){
             return true;
         }
+        if(isFiftyMoveRule()){
+            return true;
+        }
+        if(isThreefoldRepetition()){
+            return true;
+        }
 
         return false;
+    }
+    // ADDED
+    private boolean isFiftyMoveRule() {
+        return halfmoveClock >= 100;
+    }
+    // ADDED
+    private boolean isThreefoldRepetition() {
+
+        String currentPosition = getPositionKey();
+        int count = 0;
+
+        for(String position : positionHistory) {
+            if(position.equals(currentPosition)) {
+                count++;
+            }
+        }
+
+        return count >= 3;
+    }
+    // ADDED
+    private String getPositionKey() {
+
+        StringBuilder position = new StringBuilder();
+
+        for(int row = 0; row < 8; row++) {
+            for(int col = 0; col < 8; col++) {
+
+                Piece pieceAtSquare = null;
+
+                for(Piece piece : pieces) {
+                    if(piece.col == col && piece.row == row) {
+                        pieceAtSquare = piece;
+                        break;
+                    }
+                }
+
+                if(pieceAtSquare == null) {
+                    position.append(".");
+                }
+                else {
+                    position.append(pieceAtSquare.color);
+                    position.append(pieceAtSquare.type);
+                }
+            }
+        }
+
+        // ADDED
+        position.append(currentColor);
+
+        return position.toString();
     }
     private boolean isInsufficientMaterial(){
             int bishops = 0;
@@ -520,7 +597,19 @@ public class GameLayout extends JPanel implements Runnable {
                         copyPieces(simPieces, pieces);
                         activep = null;
                         promotion = false;
+                        // ADDED
+                        halfmoveClock = 0;
+
+                        // ADDED
                         changePlayer();
+
+                        // ADDED
+                        positionHistory.add(getPositionKey());
+
+                        // ADDED
+                        if(isFiftyMoveRule() || isThreefoldRepetition()) {
+                            draw = true;
+                        }
                     }
                 }
             }
