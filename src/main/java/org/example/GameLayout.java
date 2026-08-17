@@ -18,6 +18,8 @@ public class GameLayout extends JPanel implements Runnable {
     Board board = new Board();
     Mouse mouse = new Mouse();
 
+    MinimaxAI ai;
+
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
     ArrayList<Piece> promoPieces = new ArrayList<>();
@@ -47,6 +49,9 @@ public class GameLayout extends JPanel implements Runnable {
 
         setPieces();
         copyPieces(pieces, simPieces);
+
+        ai = new MinimaxAI(this, BLACK);
+
         addMouseListener(mouse);
         addMouseMotionListener(mouse);
 
@@ -149,6 +154,10 @@ public class GameLayout extends JPanel implements Runnable {
                                 changePlayer();
                                 // ADDED
                                 positionHistory.add(getPositionKey());
+
+                                if (currentColor == BLACK && !gameOver && !draw && !promotion) {
+                                    ai.makeBestMove(3);
+                                }
 
                                 // ADDED
                                 if(isFiftyMoveRule() || isThreefoldRepetition()) {
