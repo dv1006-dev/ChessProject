@@ -1,6 +1,7 @@
 package org.example;
 
 import piece.Piece;
+import piece.Queen;
 
 import java.util.ArrayList;
 
@@ -26,6 +27,7 @@ public class MinimaxAI {
         makeMove(bestMove);
         syncRealPiecesWithSimPieces();
         game.currentColor = opposite(game.currentColor);
+        updateCheckingPiece();
     }
 
     public Move findBestMove(int depth) {
@@ -97,12 +99,28 @@ public class MinimaxAI {
                         continue;
                     }
 
+                    Move move = new Move(piece, col, row, piece.hittingP);
+
                     if (GameLayout.castlingP != null) {
-                        GameLayout.castlingP = null;
-                        continue;
+                        move.castlingRook = GameLayout.castlingP;
+                        move.rookOldCol = move.castlingRook.col;
+                        move.rookOldRow = move.castlingRook.row;
+                        move.rookOldPreCol = move.castlingRook.preCol;
+                        move.rookOldPreRow = move.castlingRook.preRow;
+                        move.rookOldX = move.castlingRook.x;
+                        move.rookOldY = move.castlingRook.y;
+                        move.rookOldMoved = move.castlingRook.moved;
+
+                        if (move.castlingRook.col == 0) {
+                            move.rookNewCol = 3;
+                        }
+                        else if (move.castlingRook.col == 7) {
+                            move.rookNewCol = 5;
+                        }
+
+                        move.rookNewRow = move.castlingRook.row;
                     }
 
-                    Move move = new Move(piece, col, row, piece.hittingP);
                     makeMove(move);
                     boolean legal = !isKingInCheck(color);
                     undoMove(move);
@@ -127,6 +145,7 @@ public class MinimaxAI {
         move.oldMoved = move.piece.moved;
         move.oldTwoStepped = move.piece.twoStepped;
         move.oldHittingP = move.piece.hittingP;
+        move.pieceIndex = GameLayout.simPieces.indexOf(move.piece);
 
         if (move.capturedPiece != null) {
             move.capturedIndex = GameLayout.simPieces.indexOf(move.capturedPiece);
@@ -141,9 +160,47 @@ public class MinimaxAI {
         move.piece.preRow = move.toRow;
         move.piece.moved = true;
         move.piece.hittingP = null;
+
+        if (move.castlingRook != null) {
+            move.castlingRook.col = move.rookNewCol;
+            move.castlingRook.row = move.rookNewRow;
+            move.castlingRook.x = move.castlingRook.getX(move.rookNewCol);
+            move.castlingRook.y = move.castlingRook.getY(move.rookNewRow);
+            move.castlingRook.preCol = move.rookNewCol;
+            move.castlingRook.preRow = move.rookNewRow;
+            move.castlingRook.moved = true;
+        }
+
+        if (move.piece.type == Type.PAWN &&
+                ((move.piece.color == GameLayout.WHITE && move.toRow == 0) ||
+                        (move.piece.color == GameLayout.BLACK && move.toRow == 7))) {
+            move.promotedPiece = new Queen(move.piece.color, move.toCol, move.toRow);
+            move.promotedPiece.moved = true;
+            GameLayout.simPieces.remove(move.piece);
+            GameLayout.simPieces.add(move.promotedPiece);
+        }
     }
 
     private void undoMove(Move move) {
+        if (move.promotedPiece != null) {
+            GameLayout.simPieces.remove(move.promotedPiece);
+
+            if (!GameLayout.simPieces.contains(move.piece)) {
+                int insertIndex = Math.min(move.pieceIndex, GameLayout.simPieces.size());
+                GameLayout.simPieces.add(insertIndex, move.piece);
+            }
+        }
+
+        if (move.castlingRook != null) {
+            move.castlingRook.col = move.rookOldCol;
+            move.castlingRook.row = move.rookOldRow;
+            move.castlingRook.preCol = move.rookOldPreCol;
+            move.castlingRook.preRow = move.rookOldPreRow;
+            move.castlingRook.x = move.rookOldX;
+            move.castlingRook.y = move.rookOldY;
+            move.castlingRook.moved = move.rookOldMoved;
+        }
+
         move.piece.col = move.oldCol;
         move.piece.row = move.oldRow;
         move.piece.preCol = move.oldPreCol;
@@ -187,6 +244,37 @@ public class MinimaxAI {
         }
 
         return false;
+    }
+
+    private void updateCheckingPiece() {
+        game.checkingP = null;
+
+        Piece king = null;
+
+        for (Piece piece : GameLayout.simPieces) {
+            if (piece.type == Type.KING && piece.color == game.currentColor) {
+                king = piece;
+                break;
+            }
+        }
+
+        if (king == null) {
+            return;
+        }
+
+        for (Piece piece : GameLayout.simPieces) {
+            if (piece.color == game.currentColor) {
+                continue;
+            }
+
+            GameLayout.castlingP = null;
+            piece.hittingP = null;
+
+            if (piece.canMove(king.col, king.row)) {
+                game.checkingP = piece;
+                return;
+            }
+        }
     }
 
     private int evaluateFor(int color) {
@@ -241,7 +329,21 @@ public class MinimaxAI {
         private boolean oldMoved;
         private boolean oldTwoStepped;
         private Piece oldHittingP;
+        private int pieceIndex = -1;
         private int capturedIndex = -1;
+
+        private Piece castlingRook;
+        private int rookOldCol;
+        private int rookOldRow;
+        private int rookOldPreCol;
+        private int rookOldPreRow;
+        private int rookOldX;
+        private int rookOldY;
+        private boolean rookOldMoved;
+        private int rookNewCol;
+        private int rookNewRow;
+
+        private Piece promotedPiece;
 
         private Move(Piece piece, int toCol, int toRow, Piece capturedPiece) {
             this.piece = piece;
