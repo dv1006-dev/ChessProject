@@ -17,17 +17,18 @@ public class MinimaxAI {
         this.aiColor = aiColor;
     }
 
-    public void makeBestMove(int depth) {
+    public Move makeBestMove(int depth) {
         Move bestMove = findBestMove(depth);
 
         if (bestMove == null) {
-            return;
+            return null;
         }
 
         makeMove(bestMove);
         syncRealPiecesWithSimPieces();
-        game.currentColor = opposite(game.currentColor);
+        //game.currentColor = opposite(game.currentColor);
         updateCheckingPiece();
+        return bestMove;
     }
 
     public Move findBestMove(int depth) {

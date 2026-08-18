@@ -141,32 +141,15 @@ public class GameLayout extends JPanel implements Runnable {
                         else {
                             halfmoveClock++;
                         }
-                        if(isKingInCheck() && isCheckMate()){
-                            gameOver = true;
+                        finishMove(false);
+                        if (currentColor == BLACK && !gameOver && !draw && !promotion) {
+                            MinimaxAI.Move aiMove = ai.makeBestMove(3);
 
-                        } else if(isDraw() && isKingInCheck() == false){
-                            draw = true;
-                        }
-                        else {
-                            if (canPromote()) {
-                                promotion = true;
-                            } else {
-                                changePlayer();
-                                // ADDED
-                                positionHistory.add(getPositionKey());
-
-                                if (currentColor == BLACK && !gameOver && !draw && !promotion) {
-                                    ai.makeBestMove(3);
-                                }
-
-                                // ADDED
-                                if(isFiftyMoveRule() || isThreefoldRepetition()) {
-                                    draw = true;
-                                }
+                            if (aiMove != null) {
+                                activep = aiMove.piece;
+                                finishMove(true);
                             }
                         }
-
-
                     }
                     else {
                         copyPieces(pieces, simPieces);
@@ -209,6 +192,31 @@ public class GameLayout extends JPanel implements Runnable {
             }
         }
     }
+
+    private void finishMove(boolean aiMove) {
+        if (isKingInCheck() && isCheckMate()) {
+            gameOver = true;
+            return;
+        }
+
+        if (isDraw() && !isKingInCheck()) {
+            draw = true;
+            return;
+        }
+
+        if (!aiMove && canPromote()) {
+            promotion = true;
+            return;
+        }
+
+        changePlayer();
+        positionHistory.add(getPositionKey());
+
+        if (isFiftyMoveRule() || isThreefoldRepetition()) {
+            draw = true;
+        }
+    }
+
     private boolean isIllegal(Piece king) {
         if (king.type == Type.KING) {
             for (Piece piece : GameLayout.simPieces) {
