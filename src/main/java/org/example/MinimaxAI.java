@@ -11,6 +11,11 @@ public class MinimaxAI {
 
     private final GameLayout game;
     private final int aiColor;
+    private long nodesSearched;
+    private long betaCutoffs;
+    private long searchStartTime;
+    private int lastBestScore;
+    private int rootMoves;
 
     public MinimaxAI(GameLayout game, int aiColor) {
         this.game = game;
@@ -32,7 +37,12 @@ public class MinimaxAI {
     }
 
     public Move findBestMove(int depth) {
+        nodesSearched = 0;
+        betaCutoffs = 0;
+        searchStartTime = System.nanoTime();
+
         ArrayList<Move> moves = generateLegalMoves(aiColor);
+        rootMoves = moves.size();
         Move bestMove = null;
         int bestScore = -INF;
 
@@ -47,10 +57,15 @@ public class MinimaxAI {
             }
         }
 
+        lastBestScore = bestScore;
+        printBenchmark(depth, bestMove);
+
         return bestMove;
     }
 
     private int negamax(int depth, int alpha, int beta, int colorToMove) {
+        nodesSearched++;
+
         if (depth == 0) {
             return evaluateFor(colorToMove);
         }
@@ -75,6 +90,7 @@ public class MinimaxAI {
             alpha = Math.max(alpha, score);
 
             if (alpha >= beta) {
+                betaCutoffs++;
                 break;
             }
         }
@@ -245,6 +261,57 @@ public class MinimaxAI {
         }
 
         return false;
+    }
+
+    private void printBenchmark(int depth, Move bestMove) {
+        long elapsedNanos = System.nanoTime() - searchStartTime;
+        double elapsedMillis = elapsedNanos / 1_000_000.0;
+        double elapsedSeconds = elapsedNanos / 1_000_000_000.0;
+        long nodesPerSecond = elapsedSeconds > 0
+                ? (long) (nodesSearched / elapsedSeconds)
+                : 0;
+
+        System.out.println("===== AI Benchmark =====");
+        System.out.println("Depth: " + depth);
+        System.out.println("Best move: " + formatMove(bestMove));
+        System.out.println("Score: " + lastBestScore);
+        System.out.println("Legal root moves: " + rootMoves);
+        System.out.println("Nodes searched: " + nodesSearched);
+        System.out.println("Beta cutoffs: " + betaCutoffs);
+        System.out.println("Time: " + String.format("%.2f", elapsedMillis) + " ms");
+        System.out.println("Nodes/sec: " + nodesPerSecond);
+        System.out.println("========================");
+    }
+
+    private String formatMove(Move move) {
+        if (move == null) {
+            return "none";
+        }
+
+        String moveText = move.piece.type + " " +
+                squareName(move.oldCol, move.oldRow) +
+                " -> " +
+                squareName(move.toCol, move.toRow);
+
+        if (move.capturedPiece != null) {
+            moveText += " captures " + move.capturedPiece.type;
+        }
+
+        if (move.castlingRook != null) {
+            moveText += " castles";
+        }
+
+        if (move.promotedPiece != null) {
+            moveText += " promotes to " + move.promotedPiece.type;
+        }
+
+        return moveText;
+    }
+
+    private String squareName(int col, int row) {
+        char file = (char) ('a' + col);
+        int rank = 8 - row;
+        return "" + file + rank;
     }
 
     private void updateCheckingPiece() {
