@@ -177,7 +177,9 @@ public class MinimaxAI {
         move.piece.preRow = move.toRow;
         move.piece.moved = true;
         move.piece.hittingP = null;
-
+        if (move.piece.type == Type.PAWN) {
+            move.piece.twoStepped = Math.abs(move.toRow - move.oldRow) == 2;
+        }
         if (move.castlingRook != null) {
             move.castlingRook.col = move.rookNewCol;
             move.castlingRook.row = move.rookNewRow;
