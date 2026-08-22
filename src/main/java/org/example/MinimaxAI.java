@@ -9,8 +9,15 @@ public class MinimaxAI {
     private static final int INF = 1_000_000;
     private static final int CHECKMATE_SCORE = 100_000;
 
+    public enum SearchMode {
+        PLAIN_NEGAMAX,
+        ALPHA_BETA,
+        ALPHA_BETA_ORDERED
+    }
+
     private final GameLayout game;
     private final int aiColor;
+    private final SearchMode searchMode;
     private long nodesSearched;
     private long betaCutoffs;
     private long searchStartTime;
@@ -18,8 +25,13 @@ public class MinimaxAI {
     private int rootMoves;
 
     public MinimaxAI(GameLayout game, int aiColor) {
+        this(game, aiColor, SearchMode.ALPHA_BETA_ORDERED);
+    }
+
+    public MinimaxAI(GameLayout game, int aiColor, SearchMode searchMode) {
         this.game = game;
         this.aiColor = aiColor;
+        this.searchMode = searchMode;
     }
 
     public Move makeBestMove(int depth) {
@@ -41,19 +53,28 @@ public class MinimaxAI {
         betaCutoffs = 0;
         searchStartTime = System.nanoTime();
 
-        ArrayList<Move> moves = generateLegalMoves(aiColor);
+        ArrayList<Move> moves = generateLegalMoves(aiColor, usesMoveOrdering());
         rootMoves = moves.size();
         Move bestMove = null;
         int bestScore = -INF;
 
         for (Move move : moves) {
             makeMove(move);
-            int score = -negamax(depth - 1, -INF, INF, opposite(aiColor));
+            int score;
+
+            if (searchMode == SearchMode.PLAIN_NEGAMAX) {
+                score = -plainNegamax(depth - 1, opposite(aiColor));
+            }
+            else {
+                score = -alphaBetaNegamax(depth - 1, -INF, INF, opposite(aiColor));
+            }
+
             undoMove(move);
 
             if (bestMove == null ||
                     score > bestScore ||
-                    (score == bestScore && getMoveOrderScore(move) > getMoveOrderScore(bestMove))) {
+                    (usesMoveOrdering() && score == bestScore &&
+                            getMoveOrderScore(move) > getMoveOrderScore(bestMove))) {
                 bestScore = score;
                 bestMove = move;
             }
@@ -65,14 +86,14 @@ public class MinimaxAI {
         return bestMove;
     }
 
-    private int negamax(int depth, int alpha, int beta, int colorToMove) {
+    private int plainNegamax(int depth, int colorToMove) {
         nodesSearched++;
 
         if (depth == 0) {
             return evaluateFor(colorToMove);
         }
 
-        ArrayList<Move> moves = generateLegalMoves(colorToMove);
+        ArrayList<Move> moves = generateLegalMoves(colorToMove, false);
 
         if (moves.isEmpty()) {
             if (isKingInCheck(colorToMove)) {
@@ -85,7 +106,36 @@ public class MinimaxAI {
 
         for (Move move : moves) {
             makeMove(move);
-            int score = -negamax(depth - 1, -beta, -alpha, opposite(colorToMove));
+            int score = -plainNegamax(depth - 1, opposite(colorToMove));
+            undoMove(move);
+
+            bestScore = Math.max(bestScore, score);
+        }
+
+        return bestScore;
+    }
+
+    private int alphaBetaNegamax(int depth, int alpha, int beta, int colorToMove) {
+        nodesSearched++;
+
+        if (depth == 0) {
+            return evaluateFor(colorToMove);
+        }
+
+        ArrayList<Move> moves = generateLegalMoves(colorToMove, usesMoveOrdering());
+
+        if (moves.isEmpty()) {
+            if (isKingInCheck(colorToMove)) {
+                return -CHECKMATE_SCORE - depth;
+            }
+            return 0;
+        }
+
+        int bestScore = -INF;
+
+        for (Move move : moves) {
+            makeMove(move);
+            int score = -alphaBetaNegamax(depth - 1, -beta, -alpha, opposite(colorToMove));
             undoMove(move);
 
             bestScore = Math.max(bestScore, score);
@@ -101,6 +151,10 @@ public class MinimaxAI {
     }
 
     private ArrayList<Move> generateLegalMoves(int color) {
+        return generateLegalMoves(color, usesMoveOrdering());
+    }
+
+    private ArrayList<Move> generateLegalMoves(int color, boolean useMoveOrdering) {
         ArrayList<Move> moves = new ArrayList<>();
         ArrayList<Piece> positionPieces = new ArrayList<>(GameLayout.simPieces);
 
@@ -151,8 +205,15 @@ public class MinimaxAI {
             }
         }
 
-        orderMoves(moves);
+        if (useMoveOrdering) {
+            orderMoves(moves);
+        }
+
         return moves;
+    }
+
+    private boolean usesMoveOrdering() {
+        return searchMode == SearchMode.ALPHA_BETA_ORDERED;
     }
 
     private void orderMoves(ArrayList<Move> moves) {
