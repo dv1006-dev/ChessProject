@@ -4,6 +4,7 @@ import piece.Piece;
 import piece.Queen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class MinimaxAI {
     private static final int INF = 1_000_000;
@@ -21,6 +22,7 @@ public class MinimaxAI {
     private long nodesSearched;
     private long betaCutoffs;
     private long searchStartTime;
+    private long lastSearchNanos;
     private int lastBestScore;
     private int rootMoves;
 
@@ -51,6 +53,7 @@ public class MinimaxAI {
     public Move findBestMove(int depth) {
         nodesSearched = 0;
         betaCutoffs = 0;
+        lastSearchNanos = 0;
         searchStartTime = System.nanoTime();
 
         ArrayList<Move> moves = generateLegalMoves(aiColor, usesMoveOrdering());
@@ -84,6 +87,66 @@ public class MinimaxAI {
         printBenchmark(depth, bestMove);
 
         return bestMove;
+    }
+
+    public static void runBenchmark(GameLayout game, int aiColor, int depth) {
+        PositionSnapshot originalPosition = new PositionSnapshot();
+
+        System.out.println("===== Search Mode Benchmark =====");
+        System.out.println("Depth: " + depth);
+        System.out.println("AI color: " + colorName(aiColor));
+        System.out.println("---------------------------------");
+
+        for (SearchMode mode : SearchMode.values()) {
+            originalPosition.restore();
+
+            MinimaxAI benchmarkAi = new MinimaxAI(game, aiColor, mode);
+            Move bestMove = benchmarkAi.findBestMove(depth);
+
+            System.out.println("Mode: " + mode);
+            System.out.println("Best move: " + benchmarkAi.formatMove(bestMove));
+            System.out.println("Score: " + benchmarkAi.getLastBestScore());
+            System.out.println("Legal root moves: " + benchmarkAi.getRootMoves());
+            System.out.println("Nodes searched: " + benchmarkAi.getNodesSearched());
+            System.out.println("Beta cutoffs: " + benchmarkAi.getBetaCutoffs());
+            System.out.println("Time: " + String.format("%.2f", benchmarkAi.getLastSearchMillis()) + " ms");
+            System.out.println("Nodes/sec: " + benchmarkAi.getNodesPerSecond());
+            System.out.println("---------------------------------");
+        }
+
+        originalPosition.restore();
+        System.out.println("===== Benchmark Complete =====");
+    }
+
+    public SearchMode getSearchMode() {
+        return searchMode;
+    }
+
+    public long getNodesSearched() {
+        return nodesSearched;
+    }
+
+    public long getBetaCutoffs() {
+        return betaCutoffs;
+    }
+
+    public int getLastBestScore() {
+        return lastBestScore;
+    }
+
+    public int getRootMoves() {
+        return rootMoves;
+    }
+
+    public double getLastSearchMillis() {
+        return lastSearchNanos / 1_000_000.0;
+    }
+
+    public long getNodesPerSecond() {
+        double elapsedSeconds = lastSearchNanos / 1_000_000_000.0;
+        return elapsedSeconds > 0
+                ? (long) (nodesSearched / elapsedSeconds)
+                : 0;
     }
 
     private int plainNegamax(int depth, int colorToMove) {
@@ -400,22 +463,18 @@ public class MinimaxAI {
     }
 
     private void printBenchmark(int depth, Move bestMove) {
-        long elapsedNanos = System.nanoTime() - searchStartTime;
-        double elapsedMillis = elapsedNanos / 1_000_000.0;
-        double elapsedSeconds = elapsedNanos / 1_000_000_000.0;
-        long nodesPerSecond = elapsedSeconds > 0
-                ? (long) (nodesSearched / elapsedSeconds)
-                : 0;
+        lastSearchNanos = System.nanoTime() - searchStartTime;
 
         System.out.println("===== AI Benchmark =====");
+        System.out.println("Mode: " + searchMode);
         System.out.println("Depth: " + depth);
         System.out.println("Best move: " + formatMove(bestMove));
         System.out.println("Score: " + lastBestScore);
         System.out.println("Legal root moves: " + rootMoves);
         System.out.println("Nodes searched: " + nodesSearched);
         System.out.println("Beta cutoffs: " + betaCutoffs);
-        System.out.println("Time: " + String.format("%.2f", elapsedMillis) + " ms");
-        System.out.println("Nodes/sec: " + nodesPerSecond);
+        System.out.println("Time: " + String.format("%.2f", getLastSearchMillis()) + " ms");
+        System.out.println("Nodes/sec: " + getNodesPerSecond());
         System.out.println("========================");
     }
 
@@ -513,9 +572,85 @@ public class MinimaxAI {
         return color == GameLayout.WHITE ? GameLayout.BLACK : GameLayout.WHITE;
     }
 
+    private static String colorName(int color) {
+        return color == GameLayout.WHITE ? "WHITE" : "BLACK";
+    }
+
     private void syncRealPiecesWithSimPieces() {
         GameLayout.pieces.clear();
         GameLayout.pieces.addAll(GameLayout.simPieces);
+    }
+
+    private static class PositionSnapshot {
+        private final ArrayList<Piece> piecesSnapshot = new ArrayList<>(GameLayout.pieces);
+        private final ArrayList<Piece> simPiecesSnapshot = new ArrayList<>(GameLayout.simPieces);
+        private final ArrayList<PieceState> pieceStates = new ArrayList<>();
+
+        private PositionSnapshot() {
+            HashSet<Piece> savedPieces = new HashSet<>();
+
+            for (Piece piece : piecesSnapshot) {
+                if (savedPieces.add(piece)) {
+                    pieceStates.add(new PieceState(piece));
+                }
+            }
+
+            for (Piece piece : simPiecesSnapshot) {
+                if (savedPieces.add(piece)) {
+                    pieceStates.add(new PieceState(piece));
+                }
+            }
+        }
+
+        private void restore() {
+            for (PieceState pieceState : pieceStates) {
+                pieceState.restore();
+            }
+
+            GameLayout.pieces.clear();
+            GameLayout.pieces.addAll(piecesSnapshot);
+            GameLayout.simPieces.clear();
+            GameLayout.simPieces.addAll(simPiecesSnapshot);
+            GameLayout.castlingP = null;
+        }
+    }
+
+    private static class PieceState {
+        private final Piece piece;
+        private final int x;
+        private final int y;
+        private final int col;
+        private final int row;
+        private final int preCol;
+        private final int preRow;
+        private final Piece hittingP;
+        private final boolean moved;
+        private final boolean twoStepped;
+
+        private PieceState(Piece piece) {
+            this.piece = piece;
+            this.x = piece.x;
+            this.y = piece.y;
+            this.col = piece.col;
+            this.row = piece.row;
+            this.preCol = piece.preCol;
+            this.preRow = piece.preRow;
+            this.hittingP = piece.hittingP;
+            this.moved = piece.moved;
+            this.twoStepped = piece.twoStepped;
+        }
+
+        private void restore() {
+            piece.x = x;
+            piece.y = y;
+            piece.col = col;
+            piece.row = row;
+            piece.preCol = preCol;
+            piece.preRow = preRow;
+            piece.hittingP = hittingP;
+            piece.moved = moved;
+            piece.twoStepped = twoStepped;
+        }
     }
 
     public static class Move {
