@@ -84,7 +84,7 @@ public class MinimaxAI {
         }
 
         lastBestScore = bestScore;
-        printBenchmark(depth, bestMove);
+
 
         return bestMove;
     }
