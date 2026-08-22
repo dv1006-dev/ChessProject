@@ -51,7 +51,9 @@ public class MinimaxAI {
             int score = -negamax(depth - 1, -INF, INF, opposite(aiColor));
             undoMove(move);
 
-            if (score > bestScore) {
+            if (bestMove == null ||
+                    score > bestScore ||
+                    (score == bestScore && getMoveOrderScore(move) > getMoveOrderScore(bestMove))) {
                 bestScore = score;
                 bestMove = move;
             }
@@ -149,7 +151,78 @@ public class MinimaxAI {
             }
         }
 
+        orderMoves(moves);
         return moves;
+    }
+
+    private void orderMoves(ArrayList<Move> moves) {
+        moves.sort((a, b) -> Integer.compare(getMoveOrderScore(b), getMoveOrderScore(a)));
+    }
+
+    private int getMoveOrderScore(Move move) {
+        if (move == null) {
+            return -INF;
+        }
+
+        int score = 0;
+
+        if (move.capturedPiece != null) {
+            score += 10_000;
+            score += getPieceValue(move.capturedPiece) * 10 - getPieceValue(move.piece);
+        }
+
+        if (move.promotedPiece != null) {
+            score += 9_000 + getPieceValue(move.promotedPiece);
+        }
+
+        if (move.castlingRook != null) {
+            score += 850;
+        }
+
+        if (isCenterSquare(move.toCol, move.toRow)) {
+            score += 350;
+        }
+        else if (isNearCenterSquare(move.toCol, move.toRow)) {
+            score += 140;
+        }
+
+        if ((move.piece.type == Type.KNIGHT || move.piece.type == Type.BISHOP)
+                && isBackRank(move.piece.color, move.oldRow)
+                && !isBackRank(move.piece.color, move.toRow)) {
+            score += 260;
+        }
+
+        if (move.piece.type == Type.ROOK) {
+            if (move.toCol == 3 || move.toCol == 4) {
+                score += 220;
+            }
+            if (move.toRow == 3 || move.toRow == 4) {
+                score += 90;
+            }
+        }
+
+        if ((move.piece.type == Type.KNIGHT || move.piece.type == Type.BISHOP)
+                && move.piece.moved) {
+            score -= 80;
+        }
+
+        if (move.piece.type == Type.QUEEN && move.capturedPiece == null) {
+            score -= 120;
+        }
+
+        return score;
+    }
+
+    private boolean isCenterSquare(int col, int row) {
+        return (col == 3 || col == 4) && (row == 3 || row == 4);
+    }
+
+    private boolean isNearCenterSquare(int col, int row) {
+        return col >= 2 && col <= 5 && row >= 2 && row <= 5;
+    }
+
+    private boolean isBackRank(int color, int row) {
+        return color == GameLayout.WHITE ? row == 7 : row == 0;
     }
 
     private void makeMove(Move move) {
