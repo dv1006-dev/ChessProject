@@ -629,6 +629,15 @@ public class GameLayout extends JPanel implements Runnable {
                         // ADDED
                         positionHistory.add(getPositionKey());
 
+                        if (currentColor == BLACK && !gameOver && !draw) {
+                            MinimaxAI.Move aiMove = ai.makeBestMove(3);
+
+                            if (aiMove != null) {
+                                activep = aiMove.piece;
+                                finishMove(true);
+                            }
+                        }
+
                         // ADDED
                         if(isFiftyMoveRule() || isThreefoldRepetition()) {
                             draw = true;
