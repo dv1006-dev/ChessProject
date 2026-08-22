@@ -421,5 +421,8 @@ public class MinimaxAI {
             this.toRow = toRow;
             this.capturedPiece = capturedPiece;
         }
+        public Piece getCapturedPiece() {
+            return capturedPiece;
+        }
     }
 }

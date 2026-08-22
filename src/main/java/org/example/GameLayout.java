@@ -147,6 +147,12 @@ public class GameLayout extends JPanel implements Runnable {
 
                             if (aiMove != null) {
                                 activep = aiMove.piece;
+                                if (activep.type == Type.PAWN || aiMove.getCapturedPiece() != null) {
+                                    halfmoveClock = 0;
+                                }
+                                else {
+                                    halfmoveClock++;
+                                }
                                 finishMove(true);
                             }
                         }
