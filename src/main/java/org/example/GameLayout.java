@@ -51,10 +51,10 @@ public class GameLayout extends JPanel implements Runnable {
 
         setPieces();
         copyPieces(pieces, simPieces);
-        //Temporary Addition
-        FENLoader.loadFEN(this, "8/8/8/8/3Q4/8/8/4k2K w - - 0 1");
 
         ai = new MinimaxAI(this, BLACK);
+
+        MinimaxAI.benchmarkPositionDatabase(this, "positions.txt", 4);
 
         addMouseListener(mouse);
         addMouseMotionListener(mouse);

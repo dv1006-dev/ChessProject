@@ -86,14 +86,5 @@ public class FENLoader {
             default -> null;
         };
     }
-    public static void benchmarkPositionDatabase(
-            GameLayout game, int depth) {
 
-        // read positions.txt
-
-        // for each FEN:
-        // load FEN
-        // benchmark 3 algorithms
-        // save CSV
-    }
 }

@@ -164,6 +164,55 @@ public class MinimaxAI {
             this.nodesPerSecond = nodesPerSecond;
         }
     }
+    public static void benchmarkPositionDatabase(
+            GameLayout game,
+            String fileName,
+            int depth) {
+
+        try {
+
+            java.io.BufferedReader reader =
+                    new java.io.BufferedReader(
+                            new java.io.FileReader(fileName)
+                    );
+
+            String fen;
+            int positionNumber = 1;
+
+            while ((fen = reader.readLine()) != null) {
+
+                // Skip empty lines
+                if (fen.trim().isEmpty()) {
+                    continue;
+                }
+
+                System.out.println(
+                        "Running position " + positionNumber
+                );
+
+                // Load this position
+                FENLoader.loadFEN(game, fen);
+
+                // Run all 3 AI versions
+                ArrayList<BenchmarkResult> results = runBenchmark(
+                        game,
+                        game.currentColor,
+                        depth,
+                        positionNumber
+                );
+                saveBenchmarkResults(results);
+
+                positionNumber++;
+            }
+
+            reader.close();
+
+            System.out.println("Done!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static ArrayList<BenchmarkResult> runBenchmark(GameLayout game, int aiColor, int depth, int positionNumber) {
         PositionSnapshot originalPosition = new PositionSnapshot();
