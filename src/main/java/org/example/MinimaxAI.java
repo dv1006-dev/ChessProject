@@ -584,21 +584,7 @@ public class MinimaxAI {
         return false;
     }
 
-    private void printBenchmark(int depth, Move bestMove) {
-        lastSearchNanos = System.nanoTime() - searchStartTime;
 
-        System.out.println("===== AI Benchmark =====");
-        System.out.println("Mode: " + searchMode);
-        System.out.println("Depth: " + depth);
-        System.out.println("Best move: " + formatMove(bestMove));
-        System.out.println("Score: " + lastBestScore);
-        System.out.println("Legal root moves: " + rootMoves);
-        System.out.println("Nodes searched: " + nodesSearched);
-        System.out.println("Beta cutoffs: " + betaCutoffs);
-        System.out.println("Time: " + String.format("%.2f", getLastSearchMillis()) + " ms");
-        System.out.println("Nodes/sec: " + getNodesPerSecond());
-        System.out.println("========================");
-    }
 
     private String formatMove(Move move) {
         if (move == null) {
