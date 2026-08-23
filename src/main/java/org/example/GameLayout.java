@@ -19,6 +19,8 @@ public class GameLayout extends JPanel implements Runnable {
     Mouse mouse = new Mouse();
 
     MinimaxAI ai;
+    private ArrayList<MinimaxAI.BenchmarkResult> benchmarkResults = new ArrayList<>();
+    private int positionNumber = 0;
 
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
@@ -143,6 +145,13 @@ public class GameLayout extends JPanel implements Runnable {
                         }
                         finishMove(false);
                         if (currentColor == BLACK && !gameOver && !draw && !promotion) {
+                            positionNumber++;
+
+                            ArrayList<MinimaxAI.BenchmarkResult> results = MinimaxAI.runBenchmark(this, BLACK, 3, positionNumber);
+
+                            benchmarkResults.addAll(results);
+                            MinimaxAI.saveBenchmarkResults(results);
+
                             MinimaxAI.Move aiMove = ai.makeBestMove(3);
 
                             if (aiMove != null) {

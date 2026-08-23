@@ -5,6 +5,9 @@ import piece.Queen;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 public class MinimaxAI {
     private static final int INF = 1_000_000;
@@ -25,6 +28,7 @@ public class MinimaxAI {
     private long lastSearchNanos;
     private int lastBestScore;
     private int rootMoves;
+
 
     public MinimaxAI(GameLayout game, int aiColor) {
         this(game, aiColor, SearchMode.ALPHA_BETA_ORDERED);
@@ -84,18 +88,88 @@ public class MinimaxAI {
         }
 
         lastBestScore = bestScore;
-
+        lastSearchNanos = System.nanoTime() - searchStartTime;
 
         return bestMove;
     }
+    public static void saveBenchmarkResults(
+            ArrayList<BenchmarkResult> results) {
 
-    public static void runBenchmark(GameLayout game, int aiColor, int depth) {
+        String fileName = "benchmark_results.csv";
+
+        try {
+            boolean fileExists = new java.io.File(fileName).exists();
+
+            PrintWriter writer = new PrintWriter(
+                    new FileWriter(fileName, true)
+            );
+
+            if (!fileExists) {
+                writer.println(
+                        "Position,Algorithm,Depth,Score,RootMoves,Nodes,BetaCutoffs,TimeMillis,NodesPerSecond"
+                );
+            }
+
+            for (BenchmarkResult result : results) {
+
+                writer.println(
+                        result.positionNumber + "," +
+                                result.mode + "," +
+                                result.depth + "," +
+                                result.score + "," +
+                                result.rootMoves + "," +
+                                result.nodes + "," +
+                                result.betaCutoffs + "," +
+                                result.timeMillis + "," +
+                                result.nodesPerSecond
+                );
+            }
+
+            writer.close();
+
+        } catch (IOException e) {
+            System.out.println("Error saving benchmark results:");
+            e.printStackTrace();
+        }
+    }
+    public static class BenchmarkResult {
+        public SearchMode mode;
+        public int depth;
+        public int score;
+        public int rootMoves;
+        public long nodes;
+        public long betaCutoffs;
+        public double timeMillis;
+        public long nodesPerSecond;
+        public int positionNumber;
+        public BenchmarkResult(
+                int positionNumber,
+                SearchMode mode,
+                int depth,
+                int score,
+                int rootMoves,
+                long nodes,
+                long betaCutoffs,
+                double timeMillis,
+                long nodesPerSecond) {
+
+            this.positionNumber = positionNumber;
+            this.mode = mode;
+            this.depth = depth;
+            this.score = score;
+            this.rootMoves = rootMoves;
+            this.nodes = nodes;
+            this.betaCutoffs = betaCutoffs;
+            this.timeMillis = timeMillis;
+            this.nodesPerSecond = nodesPerSecond;
+        }
+    }
+
+    public static ArrayList<BenchmarkResult> runBenchmark(GameLayout game, int aiColor, int depth, int positionNumber) {
         PositionSnapshot originalPosition = new PositionSnapshot();
 
-        System.out.println("===== Search Mode Benchmark =====");
-        System.out.println("Depth: " + depth);
-        System.out.println("AI color: " + colorName(aiColor));
-        System.out.println("---------------------------------");
+        ArrayList<BenchmarkResult> results = new ArrayList<>();
+
 
         for (SearchMode mode : SearchMode.values()) {
             originalPosition.restore();
@@ -103,19 +177,18 @@ public class MinimaxAI {
             MinimaxAI benchmarkAi = new MinimaxAI(game, aiColor, mode);
             Move bestMove = benchmarkAi.findBestMove(depth);
 
-            System.out.println("Mode: " + mode);
-            System.out.println("Best move: " + benchmarkAi.formatMove(bestMove));
-            System.out.println("Score: " + benchmarkAi.getLastBestScore());
-            System.out.println("Legal root moves: " + benchmarkAi.getRootMoves());
-            System.out.println("Nodes searched: " + benchmarkAi.getNodesSearched());
-            System.out.println("Beta cutoffs: " + benchmarkAi.getBetaCutoffs());
-            System.out.println("Time: " + String.format("%.2f", benchmarkAi.getLastSearchMillis()) + " ms");
-            System.out.println("Nodes/sec: " + benchmarkAi.getNodesPerSecond());
-            System.out.println("---------------------------------");
+            results.add(new BenchmarkResult(positionNumber, mode, depth,
+                    benchmarkAi.getLastBestScore(),
+                    benchmarkAi.getRootMoves(),
+                    benchmarkAi.getNodesSearched(),
+                    benchmarkAi.getBetaCutoffs(),
+                    benchmarkAi.getLastSearchMillis(),
+                    benchmarkAi.getNodesPerSecond()
+            ));
         }
 
         originalPosition.restore();
-        System.out.println("===== Benchmark Complete =====");
+        return results;
     }
 
     public SearchMode getSearchMode() {
